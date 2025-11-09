@@ -63,3 +63,94 @@ Finally, when verifying if the tables are created properly use this step: ![img.
 > end: srijan ravisankar - date: nov 8, 2025 - time: 7:30 PM. 
 
 ---
+
+> start: prajith ravisankar - date: nov 8, 2025 - time: 7:40 PM. 
+
+# API end points for transaction module
+
+## creating a post endpoint
+- api endpoint for adding transactions: 
+  - checkout TransactionRoutes.kt
+  - here Route.transactionRouting() extends teh Ktor's route class with our own function
+  - route("/transactions") {...} groups all endpoints that start with /transactions in one place
+  - post {...} is our method that handles post requests sent to /transactions
+  - call.receive<Transaction>(). Here, ktor, using serialization plugin, takes the incoming json data and automatically builds a Transaction object.
+- in the Routing.kt we are calling our transactionRouting function to active that route. 
+
+### testing the endpoint
+- testing using postman for this endpoint
+  - created a sample user log to test because userId is not null and foreign key: 
+    - ![img.png](temp_images/user_id_1.png)
+  - ran into 415 unsupported media type
+    ```json
+    {
+        "userId": 1,
+        "title": "Grocery Shopping",
+        "category": "Food",
+        "subCategory": "Groceries",
+        "transactionType": "expense",
+        "amount": "95.50",
+        "date": "2024-11-10T10:00:00Z",
+        "description": "Weekly groceries from the store",
+        "location": "Supermarket"
+    }
+    ```
+  - we are missing a middleware/plugin in the Serialization.kt, this lets us convert between JSON and Ktor object. 
+  ```kotlin
+    install(ContentNegotiation) {
+        json()
+    }
+  ```
+  - after the above step: postmap gave us this: Transaction received successfully
+
+### improving the endpoint with actual save functionality to the database
+- connecting to a database, creating a sql with safe placeholders, preparing and executing the sql statement based on our response data inside transaction variable
+- refer Serialization.kt
+    ```kotlin
+        // get a connection the the database, it is open, the use {..} block will close it
+        // after opening the connection below.
+        val connection = Database.connect()
+
+        // we are using safe place holders here (?) - prevents SQL injection attack
+        // :: handles type conversions automatically kotlin -> sql types (we have custom type)
+        val sql = """
+            INSERT INTO transactions (user_id, title, category, sub_category, transaction_type, amount, date, description, location)
+            VALUES (?, ?, ?, ?, ?::transaction_type, ?, ?::timestamp with time zone, ?, ?)
+        """.trimIndent()
+
+        // automatically closes the connection after executing the statements
+        // meaning: Open a database connection, prepare this SQL statement safely, and when done,
+        // automatically close the connection — even if something goes wrong.
+        connection.use { conn ->
+            // preparedStatement = compiled SQL statements ready to get values inserted in place
+            // of "?" placeholders.
+            val statement = conn.prepareStatement(sql)
+
+            // filling the ? placeholders one by one
+            statement.setInt(1, transaction.userId)
+            statement.setString(2, transaction.title)
+            statement.setString(3, transaction.category)
+            statement.setString(4, transaction.subCategory)
+            statement.setString(5, transaction.transactionType)
+            statement.setBigDecimal(6, BigDecimal(transaction.amount))
+            statement.setString(7, transaction.date)
+            statement.setString(8, transaction.description)
+            statement.setString(9, transaction.location)
+
+            // execute the query to insert the data
+            statement.executeUpdate()
+        }
+
+
+        call.respond(HttpStatusCode.Created, "Transaction stored successfully")
+    ```
+  - proof: ![img.png](temp_images/proof_that_transaction_recorded_in_postgres_database.png)
+
+### metrics and benchmark for post endpoint "/transactions"
+- response times for 10 "/transactions" post calls: 142ms, 52 ms, 28 ms, 24 ms, 47 ms, 17 ms, 24 ms, 24 ms, 30 ms, 21 ms
+- average time: 40 ms
+
+
+> end: prajith ravisankar - date: nov 8, 2025 - time:  PM. 
+
+---

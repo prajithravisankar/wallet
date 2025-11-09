@@ -50,7 +50,7 @@ object Database {
                     amount DECIMAL(10, 2) NOT NULL, 
                     date TIMESTAMP WITH TIME ZONE NOT NULL, 
                     description TEXT, 
-                    location VARCHAR(10), 
+                    location VARCHAR(100), 
                     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
                 )
             """.trimIndent(),

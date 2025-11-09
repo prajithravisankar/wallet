@@ -1,5 +1,6 @@
 package com.example
 
+import com.example.routes.transactionRouting
 import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
 import io.ktor.server.application.*
@@ -14,6 +15,10 @@ import java.sql.DriverManager
 
 fun Application.configureRouting() {
     routing {
+        // activation the transaction routes
+        transactionRouting()
+
+        // example route
         get("/") {
             call.respondText("Hello World!")
         }
