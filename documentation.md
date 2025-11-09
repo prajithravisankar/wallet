@@ -1,4 +1,4 @@
-## Local Development Setup 
+# Local Development Setup 
 
 > start: prajith ravisankar - date: nov 8, 2025 - time: 11:00 AM.
 
@@ -152,5 +152,89 @@ Finally, when verifying if the tables are created properly use this step: ![img.
 
 
 > end: prajith ravisankar - date: nov 8, 2025 - time:  PM. 
+
+---
+
+> start: prajith ravisankar - date: nov 9, 2025 - time: 8:50 AM.
+
+
+# Read Operation for Transactions module
+
+### basic implementation
+- define get all transactions route in TransactionRoutes.kt
+  - defined get("{userId}") {...} route in TransactionRoutes.kt
+  - converted the userId param value from string url to int or null, and handle the null case. 
+  - return@get means return from only the inner get endpoint and not the entire routing function.
+  - ![img.png](temp_images/basic_get_transactions_implementation.png)
+
+### testing basic implementation
+- testing: http://0.0.0.0:8080/transactions/1, it is working returning: "Endpoint is working. will fetch transactions for user ID: 1"
+- testing: http://0.0.0.0:8080/transactions/abc, it is returning as expected: "invalid user id"
+- terminal output: 
+  - Fetching transactions for user ID: 1
+  - Fetching transactions for user ID: 3
+  - Fetching transactions for user ID: 1
+
+### implementing database connectivity for get endpoint
+```kotlin
+        // look for get request to "/transaction/someNumber" and name the someNumber to userId
+        // Example: /transactions/1 here the userId is 1
+        get("{userId}") {
+            // ktor captures the value from URL path and its always a string, we need to convert it to int
+            val userId = call.parameters["userId"]?.toIntOrNull()
+
+            if (userId == null) {
+                call.respond(HttpStatusCode.BadRequest, "invalid user id")
+                return@get // this means exit only from current lambda inner function the get {...}
+                // not the entire outer function.
+            }
+
+            val connection = Database.connect()
+            val sql = """
+                SELECT transaction_id, user_id, title, category, sub_category, transaction_type, 
+                        amount, date, description, location, created_at
+                FROM transactions 
+                WHERE user_id = ? 
+                ORDER BY date DESC
+            """.trimIndent()
+
+            val transactions = mutableListOf<Transaction>()
+            connection.use { conn ->
+                val statement = conn.prepareStatement(sql)
+                statement.setInt(1, userId) // replace the first ? placeholder with userId
+                val resultSet = statement.executeQuery() // resultSet is like a cursor for a table where we can loop through all the records row by row
+                while (resultSet.next()) {
+                    // while the cursor is not at the end of the table, get the current transaction (current row)
+                    // and create a Transaction object from it and add it to the transactions list and return it.
+                    val currentTransaction = Transaction(
+                        transactionId = resultSet.getInt("transaction_id"),
+                        userId = resultSet.getInt("user_id"),
+                        title = resultSet.getString("title"),
+                        category = resultSet.getString("category"),
+                        subCategory = resultSet.getString("sub_category"),
+                        transactionType = resultSet.getString("transaction_type"),
+                        amount = resultSet.getBigDecimal("amount")?.toPlainString() ?: "0",
+                        date = resultSet.getTimestamp("date")?.toInstant()?.toString()?: resultSet.getString("date") ?: "",
+                        description = resultSet.getString("description"),
+                        location = resultSet.getString("location"),
+                        createdAt = resultSet.getTimestamp("created_at")?.toInstant()?.toString() ?: ""
+                    )
+
+                    // resultSet.getTimestamp("date")?.toInstant()?.toString()?: resultSet.getString("date") ?: "",
+                    // resultSet.getTimestamp("date")?.toInstant() -> call toInstant only if resultSet.getTimestamp("date") not null
+                    // resultSet.getTimestamp("date")?.toInstant()?.toString() -> call toString only if resultSet.getTimestamp("date")?.toInstant() not null
+                    // resultSet.getTimestamp("date")?.toInstant()?.toString() ?: resultSet.getString("date") -> if this (resultSet.getTimestamp("date")?.toInstant()?.toString()) is null, use this (resultSet.getString("date"))
+                    // resultSet.getTimestamp("date")?.toInstant()?.toString()?: resultSet.getString("date") ?: "" -> if this is null (resultSet.getTimestamp("date")?.toInstant()?.toString()?: resultSet.getString("date")) use this ("")
+
+                    transactions.add(currentTransaction)
+                }
+            }
+
+            call.respond(HttpStatusCode.OK, transactions)
+        }
+```
+    - testing result: calling get method for http://0.0.0.0:8080/transactions/1, results: ![img.png](img.png)
+
+> end: prajith ravisankar - date: nov 9, 2025 - time: 10:35 PM. 
 
 ---

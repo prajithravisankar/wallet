@@ -54,8 +54,63 @@ fun Route.transactionRouting() {
                 statement.executeUpdate()
             }
 
-
             call.respond(HttpStatusCode.Created, "Transaction stored successfully")
+        }
+
+        // look for get request to "/transaction/someNumber" and name the someNumber to userId
+        // Example: /transactions/1 here the userId is 1
+        get("{userId}") {
+            // ktor captures the value from URL path and its always a string, we need to convert it to int
+            val userId = call.parameters["userId"]?.toIntOrNull()
+
+            if (userId == null) {
+                call.respond(HttpStatusCode.BadRequest, "invalid user id")
+                return@get // this means exit only from current lambda inner function the get {...}
+                // not the entire outer function.
+            }
+
+            val connection = Database.connect()
+            val sql = """
+                SELECT transaction_id, user_id, title, category, sub_category, transaction_type, 
+                        amount, date, description, location, created_at
+                FROM transactions 
+                WHERE user_id = ? 
+                ORDER BY date DESC
+            """.trimIndent()
+
+            val transactions = mutableListOf<Transaction>()
+            connection.use { conn ->
+                val statement = conn.prepareStatement(sql)
+                statement.setInt(1, userId) // replace the first ? placeholder with userId
+                val resultSet = statement.executeQuery() // resultSet is like a cursor for a table where we can loop through all the records row by row
+                while (resultSet.next()) {
+                    // while the cursor is not at the end of the table, get the current transaction (current row)
+                    // and create a Transaction object from it and add it to the transactions list and return it.
+                    val currentTransaction = Transaction(
+                        transactionId = resultSet.getInt("transaction_id"),
+                        userId = resultSet.getInt("user_id"),
+                        title = resultSet.getString("title"),
+                        category = resultSet.getString("category"),
+                        subCategory = resultSet.getString("sub_category"),
+                        transactionType = resultSet.getString("transaction_type"),
+                        amount = resultSet.getBigDecimal("amount")?.toPlainString() ?: "0",
+                        date = resultSet.getTimestamp("date")?.toInstant()?.toString()?: resultSet.getString("date") ?: "",
+                        description = resultSet.getString("description"),
+                        location = resultSet.getString("location"),
+                        createdAt = resultSet.getTimestamp("created_at")?.toInstant()?.toString() ?: ""
+                    )
+
+                    // resultSet.getTimestamp("date")?.toInstant()?.toString()?: resultSet.getString("date") ?: "",
+                    // resultSet.getTimestamp("date")?.toInstant() -> call toInstant only if resultSet.getTimestamp("date") not null
+                    // resultSet.getTimestamp("date")?.toInstant()?.toString() -> call toString only if resultSet.getTimestamp("date")?.toInstant() not null
+                    // resultSet.getTimestamp("date")?.toInstant()?.toString() ?: resultSet.getString("date") -> if this (resultSet.getTimestamp("date")?.toInstant()?.toString()) is null, use this (resultSet.getString("date"))
+                    // resultSet.getTimestamp("date")?.toInstant()?.toString()?: resultSet.getString("date") ?: "" -> if this is null (resultSet.getTimestamp("date")?.toInstant()?.toString()?: resultSet.getString("date")) use this ("")
+
+                    transactions.add(currentTransaction)
+                }
+            }
+
+            call.respond(HttpStatusCode.OK, transactions)
         }
     }
 }
