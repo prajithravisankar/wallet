@@ -1,5 +1,6 @@
 package com.example
 
+import com.example.routes.budgetRouting
 import com.example.routes.transactionRouting
 import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
@@ -17,6 +18,9 @@ fun Application.configureRouting() {
     routing {
         // activation the transaction routes
         transactionRouting()
+
+        // activating the budget routes
+        budgetRouting()
 
         // example route
         get("/") {

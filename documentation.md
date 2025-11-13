@@ -304,3 +304,58 @@ data class Budget(
 > end: prajith ravisankar - date: nov 13, 2025 - time: 3:30 PM.
 
 ---
+
+> start: prajith ravisankar - date: nov 13, 2025 - time: 3:40 PM.
+
+# POST endpoint for budget
+
+- checkout BudgetRoutes.kt
+```kotlin
+post {
+    val budget = call.receive<Budget>()
+    val connection = Database.connect()
+
+    // creating sql with placeholders will be filled in the later parts.
+    // budget id and created at will be created by postgres itself
+    val sql = """
+        INSERT INTO budgets (
+            user_id, category, sub_category, budget_limit, period_type, start_date, 
+            end_date, description
+        )
+        VALUES (?, ?, ?, ?, ?::period_type, ?::date, ?::date, ?)
+    """.trimIndent()
+
+    connection.use { conn ->
+        val statement = conn.prepareStatement(sql)
+
+        statement.setInt(1, budget.userId)
+        statement.setString(2, budget.category)
+        statement.setString(3, budget.subCategory)
+        statement.setBigDecimal(4, BigDecimal(budget.budgetLimit)) // here is where we are actually converting it from string to decimal
+        statement.setString(5, budget.periodType)
+        statement.setString(6, budget.startDate)
+        statement.setString(7, budget.endDate)
+        statement.setString(8, budget.description)
+
+        // this is where we actually insert a row in the postgres.
+        statement.executeUpdate()
+    }
+
+    call.respond(HttpStatusCode.Created, "budget created successfully")
+
+}
+```
+- it is also important to activate the budget route in the Routing.kt
+```kotlin
+// activating the budget routes
+budgetRouting()
+```
+- testing post endpoint: ![img.png](temp_images/post_budgets_endpoint_testing.png)
+- verified if it exists in the database: ![img.png](temp_images/verified_if_exists_in_database_after_budget_post_endpoint_testing.png)
+
+aside: use this to see in terminal of changes before staged: git difftool -t vimdiff, 
+after staged: git difftool -t vimdiff --staged
+
+> end: prajith ravisankar - date: nov 13, 2025 - time: 4:10 PM.
+
+---
