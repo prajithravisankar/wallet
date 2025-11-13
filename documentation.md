@@ -359,3 +359,61 @@ after staged: git difftool -t vimdiff --staged
 > end: prajith ravisankar - date: nov 13, 2025 - time: 4:10 PM.
 
 ---
+
+> start: prajith ravisankar - date: nov 13, 2025 - time: 6:15 PM.
+
+# GET endpoints for budgets server
+
+```kotlin
+// GET /budgets/{userId} -> fetch all the budgets for a particular user
+get("{userId}") {
+    val userId = call.parameters["userId"]?.toIntOrNull()
+    if (userId == null) {
+        call.respond(HttpStatusCode.BadRequest, "invalid user id")
+        return@get
+    }
+
+    val connection = Database.connect()
+
+    val sql = """
+        SELECT budget_id, user_id, category, sub_category, budget_limit, period_type, start_date,
+        end_date, description, created_at
+        FROM budgets
+        WHERE user_id = ?
+        ORDER BY start_date DESC
+    """.trimIndent()
+
+    val budgets = mutableListOf<Budget>()
+
+    connection.use { conn ->
+        val statement = conn.prepareStatement(sql)
+        statement.setInt(1, userId)
+        val resultSet = statement.executeQuery()
+        while (resultSet.next()) {
+            val currentBudget = Budget(
+                budgetId = resultSet.getInt("budget_id"),
+                userId = resultSet.getInt("user_id"),
+                category = resultSet.getString("category"),
+                subCategory = resultSet.getString("sub_category"),
+                budgetLimit = resultSet.getBigDecimal("budget_limit")?.toPlainString() ?: "0",
+                periodType = resultSet.getString("period_type"),
+                startDate = resultSet.getDate("start_date")?.toString() ?: "",
+                endDate = resultSet.getDate("end_date")?.toString() ?: "",
+                description = resultSet.getString("description"),
+                createdAt = resultSet.getTimestamp("created_at")?.toInstant()?.toString() ?: ""
+            )
+
+            budgets.add(currentBudget)
+        }
+    }
+
+    call.respond(HttpStatusCode.OK, budgets)
+}
+```
+
+- tested with postman: ![img.png](temp_images/get_budgets_for_user_id_postman.png)
+
+> end: prajith ravisankar - date: nov 13, 2025 - time: 6:50 PM.
+
+---
+
