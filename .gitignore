@@ -1,36 +1,99 @@
-.gradle
-build/
-!gradle/wrapper/gradle-wrapper.jar
-!**/src/main/**/build/
-!**/src/test/**/build/
-
-### STS ###
-.apt_generated
-.classpath
-.factorypath
-.project
-.settings
-.springBeans
-.sts4-cache
-bin/
-!**/src/main/**/bin/
-!**/src/test/**/bin/
-
-### IntelliJ IDEA ###
-.idea
-*.iws
+# -------------------------
+# IntelliJ / JetBrains
+# -------------------------
+.idea/
 *.iml
-*.ipr
+*.iws
 out/
-!**/src/main/**/out/
-!**/src/test/**/out/
 
-### NetBeans ###
-/nbproject/private/
-/nbbuild/
-/dist/
-/nbdist/
-/.nb-gradle/
+# -------------------------
+# Gradle
+# -------------------------
+.gradle/
+build/
 
-### VS Code ###
-.vscode/
+# Ignore build outputs in each project
+*/build/
+*/out/
+
+# Wrapper files
+!gradlew
+!gradlew.bat
+!gradle/wrapper/gradle-wrapper.jar
+
+# -------------------------
+# OS-specific files
+# -------------------------
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# -------------------------
+# Kotlin
+# -------------------------
+*.kotlin_module
+
+# -------------------------
+# Logs & temporary
+# -------------------------
+*.log
+*.tmp
+*.swp
+*.swo
+
+# -------------------------
+# Environment / Config
+# -------------------------
+local.properties
+*.env
+
+# -------------------------
+# Ktor / Compose specific
+# -------------------------
+composeApp/.caches/
+composeApp/.gradle/
+composeApp/build/
+server/.gradle/
+server/build/
+
+# -------------------------
+# Java / JVM
+# -------------------------
+*.class
+*.jar
+*.war
+*.ear
+hs_err_pid*
+replay_pid*
+
+# -------------------------
+# Cache folders
+# -------------------------
+.cache/
+.node_modules/
+.npm/
+npm-debug.log
+yarn-debug.log
+yarn-error.log
+pnpm-error.log
+
+# -------------------------
+# Kotlin Multiplatform
+# -------------------------
+.kotlin/
+javascript/
+*/kotlin-js-store/
+
+# -------------------------
+# Other temp files
+# -------------------------
+*.orig
+*.rej
+
+
