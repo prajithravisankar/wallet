@@ -1,4 +1,3 @@
-// Make sure this package name matches the one your other files are in
 package com.example
 
 import java.sql.Connection
@@ -6,28 +5,23 @@ import java.sql.DriverManager
 
 object Database {
     fun connect(): Connection {
-        // The address of our database running in Docker
-        val url = "jdbc:postgresql://localhost:5432/postgres"
+//        val url = "jdbc:postgresql://localhost:5432/postgres"
+//        val user = "postgres"
+//        val password = "12345Prasri2004$$"
 
-        // The username for the database. "postgres" is the default.
-        val user = "postgres"
+        val url = "jdbc:postgresql://localhost:5433/walletdb"
+        val user = "walletuser"
+        val password = "walletpass"
 
-        // The password we set in our 'docker run' command
-        val password = "mysecretpassword"
 
-        // This line uses the PostgreSQL driver to establish a connection
         return DriverManager.getConnection(url, user, password)
     }
 
-    // this function will setup our database whenever we start our server
     fun init() {
         val sqlStatements = listOf(
-            // custom types
-            "CREATE TYPE transaction_type AS ENUM ('expense', 'income');", // postgre sql needs this for custom type declare it with TYPE
+            "CREATE TYPE transaction_type AS ENUM ('expense', 'income');",
             "CREATE TYPE period_type AS ENUM ('daily', 'weekly', 'monthly', 'yearly');",
 
-            // create tables if they don't exist in the database
-            // here SERIAL - auto incrementing numbers
             """
                 CREATE TABLE IF NOT EXISTS users (
                     user_id SERIAL PRIMARY KEY,
@@ -70,11 +64,8 @@ object Database {
             """.trimIndent()
         )
 
-        val connection = connect() // we call the connection to the postgresql
-        // below use automatically closes the block {}
-        // conn is a connection object, we can use it to send sql commands
+        val connection = connect()
         connection.use { conn ->
-            // this statement object lets us send sql commands to the database
             val statement = conn.createStatement()
             sqlStatements.forEach { sql ->
                 try {

@@ -4,11 +4,43 @@ plugins {
     alias(libs.plugins.kotlin.plugin.serialization)
 }
 
+//java {
+//    toolchain {
+//        languageVersion.set(JavaLanguageVersion.of(25))
+//    }
+//}
+//
+//tasks.withType<JavaCompile> {
+//    sourceCompatibility = "24"
+//    targetCompatibility = "24"
+//}
+//
+//tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
+//    compilerOptions {
+//        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_25)
+//    }
+//}
+
+kotlin {
+    jvmToolchain {
+        languageVersion.set(JavaLanguageVersion.of(21))
+    }
+}
+
+java {
+    toolchain {
+        languageVersion.set(JavaLanguageVersion.of(21))
+    }
+}
+
+
 group = "com.example"
 version = "0.0.1"
 
 application {
     mainClass = "io.ktor.server.netty.EngineMain"
+
+    applicationDefaultJvmArgs = listOf("-Dio.ktor.development=true")
 }
 
 dependencies {

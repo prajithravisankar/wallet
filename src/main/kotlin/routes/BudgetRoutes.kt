@@ -14,15 +14,11 @@ import io.ktor.server.routing.route
 import java.math.BigDecimal
 
 fun Route.budgetRouting() {
-    // group all the endpoints for budgets together
     route("/budgets") {
-        // POST /budgets -> creates a new budget ultimately should end up in the database
         post {
             val budget = call.receive<Budget>()
             val connection = Database.connect()
 
-            // creating sql with placeholders will be filled in the later parts.
-            // budget id and created at will be created by postgres itself
             val sql = """
                 INSERT INTO budgets (
                     user_id, category, sub_category, budget_limit, period_type, start_date, 
