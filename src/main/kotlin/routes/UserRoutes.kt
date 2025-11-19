@@ -85,5 +85,80 @@ fun Route.userRouting() {
                 call.respond(HttpStatusCode.Unauthorized, "Invalid email or password")
             }
         }
+
+        put("/{id}") {
+            val userId = call.parameters["id"]?.toIntOrNull()
+                ?: return@put call.respond(HttpStatusCode.BadRequest, "Invalid user ID")
+
+            val updateRequest = call.receive<User>()
+
+            val sql = """
+                UPDATE users
+                SET first_name = ?, last_name = ?, email = ?, updated_at = CURRENT_TIMESTAMP
+                WHERE user_id = ?
+            """.trimIndent()
+
+            Database.connect().use { conn ->
+                val statement = conn.prepareStatement(sql)
+                statement.setString(1, updateRequest.firstName)
+                statement.setString(2, updateRequest.lastName)
+                statement.setString(3, updateRequest.email)
+                statement.setInt(4, userId)
+
+                val rows = statement.executeUpdate()
+                if (rows == 0) {
+                    return@put call.respond(HttpStatusCode.NotFound, "User not found")
+                }
+            }
+
+            call.respond(HttpStatusCode.OK, "User profile updated")
+        }
+
+        put("/{id}/password") {
+
+            val userId = call.parameters["id"]?.toIntOrNull()
+                ?: return@put call.respond(HttpStatusCode.BadRequest, "Invalid user ID")
+
+            val request = call.receive<Map<String, String>>()
+            val oldPassword = request["oldPassword"] ?: return@put call.respond(HttpStatusCode.BadRequest)
+            val newPassword = request["newPassword"] ?: return@put call.respond(HttpStatusCode.BadRequest)
+
+            Database.connect().use { conn ->
+
+                // Fetch existing password hash
+                val selectSql = "SELECT password FROM users WHERE user_id = ?"
+                val storedHash: String? = conn.prepareStatement(selectSql).use { stmt ->
+                    stmt.setInt(1, userId)
+                    val rs = stmt.executeQuery()
+                    if (rs.next()) rs.getString("password") else null
+                }
+
+                if (storedHash == null)
+                    return@put call.respond(HttpStatusCode.NotFound, "User not found")
+
+                // Verify old password
+                val verified = BCrypt.verifyer().verify(oldPassword.toCharArray(), storedHash).verified
+                if (!verified)
+                    return@put call.respond(HttpStatusCode.Unauthorized, "Incorrect old password")
+
+                // Hash new password
+                val newHash = BCrypt.withDefaults().hashToString(12, newPassword.toCharArray())
+
+                // Update password
+                val updateSql = """
+                    UPDATE users SET password = ?, updated_at = CURRENT_TIMESTAMP
+                    WHERE user_id = ?
+                """
+                conn.prepareStatement(updateSql).use { stmt ->
+                    stmt.setString(1, newHash)
+                    stmt.setInt(2, userId)
+                    stmt.executeUpdate()
+                }
+            }
+
+            call.respond(HttpStatusCode.OK, "Password updated successfully")
+        }
+
+
     }
 }
