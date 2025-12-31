@@ -13,6 +13,12 @@ This project was created using the [Ktor Project Generator](https://start.ktor.i
 
 ---
 
+### Demo
+
+https://github.com/user-attachments/assets/23318c55-659b-4968-b17e-a8f325a49389
+
+---
+
 ### system design architecture and flow
 
 ![user login flow](./temp_images/Budget%20Planner%20_%20Expense%20Tracker-7.jpg)
